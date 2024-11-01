@@ -2,20 +2,21 @@ import { useState } from 'react'
 import GameClass from './GameClass'
 
 // The Tic-Tac-Toe game component hosts the game board and game history components.
-// It also manages the game state.  See the GameClass class below for the game logic.
+// It also manages the game state.  See the GameClass class for the game logic.
 export default function Game() {
-  const [games, setGameData] = useState([new GameClass()]);
-  const game = games[games.length-1];
+  const [currentGame, setGameData] = useState(new GameClass());
+  const game = currentGame.clone();
+
 
   function handlePlay(i) {
     game.handlePlay(i);
-    setGameData([...games, game]);  // Save state, re-render.
+    setGameData(game);  // Save state, re-render.
   } ;
 
   function jumpTo(move) {
     game.jumpTo(move);
-    setGameData([...games, game]);  // Save state, re-render.
-  }; 
+    setGameData(game);  // Save state, re-render.
+}; 
 
   return (
     <div className="game">

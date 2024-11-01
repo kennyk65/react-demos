@@ -1,11 +1,20 @@
 //  The GameClass representing the data, object state, 
 //  and game logic needed to operate a tic-tac-toe game:
 class GameClass {
-    constructor() {
-      this.history = [Array(9).fill(null)];
+    constructor(state = null) {
       this.currentMove = 0;
+      if (state) {
+        this.history = state.history.map(board => [...board]);  // deep copy
+        this.currentMove = state.currentMove;
+      } else {
+        this.history = [Array(9).fill(null)];
+      }
     }
   
+    clone() {
+      return new GameClass(this);
+    }
+
     isXNext() {
       return this.currentMove % 2 === 0;
     }
@@ -67,15 +76,16 @@ class GameClass {
       return null;
     }
   
+    // A stalemate occurs when all squares are filled and there is no winner.
     isStalemate(squares) {
       for (let i = 0; i < squares.length; i++) {
         if (squares[i] === null) {
-          return false;
+          return false;  // At least one square is empty
         }
       }
-      return true
+      return this.calculateWinner(squares) === null;
     }
   
 };
 
-export default GameClass;
+export default GameClass;  

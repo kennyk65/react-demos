@@ -34,7 +34,12 @@ describe('GameClass', () => {
     game.history = [
       ['X', 'O', 'X', 'X', 'X', 'O', 'O', 'X', 'O']
     ];
-    game.currentMove = 0;
     expect(game.isStalemate(game.getCurrentSquares())).toBe(true);
+
+    game.history = [
+      ['X', 'O', 'X', 'X', 'X', 'O', 'X', 'X', 'X']
+    ];
+    expect(game.isStalemate(game.getCurrentSquares())).toBe(false);
+
   });
 });
