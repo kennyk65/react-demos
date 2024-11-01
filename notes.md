@@ -59,3 +59,19 @@ Compiled successfully!".  What is this message trying to say?
 
 
 require (from NodeJS / CommonJS) vs import (from Ecmascript)
+
+## Some JSX Rules ##
+
+* If a JSX expression spans more than one line, you'll need to enclose it in ( ).
+* A JSX expression must be a single element.  If you have multiple elements, you can enclose in <div> or <> </> tags.
+* JSX expressions can be assigned to variables, returned from functions, etc.
+* In JSX, you can't use the `class` attribute; instead you have to specify `className`.  This is because JSX is translated into JavaScript, and `class` is a reserved word in JS.
+* When makings <li> elements or other things expected to stay in order, you usually need to give each element a `key` attribute.  Otherwise React might scramble them up on refresh.
+* React components must be named beginning with a capital letter.  This will distinguish them later from regular HTML tags.
+
+## Hooks ##
+
+React hooks include `useState(), useEffect(), useContext(), useReducer(), useRef()` and others.
+
+
+

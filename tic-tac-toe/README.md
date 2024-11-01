@@ -134,10 +134,3 @@ describe('Game E2E', () => {
 * cy.get() - Retrieves DOM elements by selector.  .eq() seems to select an iteration from an array.  .click() clicks.
 
 
-## Some JSX Rules ##
-
-* If a JSX expression spans more than one line, you'll need to enclose it in ( ).
-* A JSX expression must be a single element.  If you have multiple elements, you can enclose in <div> or <> </> tags.
-* JSX expressions can be assigned to variables, returned from functions, etc.
-* In JSX, you can't use the `class` attribute; instead you have to specify `className`.  This is because JSX is translated into JavaScript, and `class` is a reserved word in JS.
-* When makings <li> elements or other things expected to stay in order, you usually need to give each element a `key` attribute.  Otherwise React might scramble them up on refresh.
