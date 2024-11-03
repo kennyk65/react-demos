@@ -1,7 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 
-import App from "./Container/AppFunction";
+import App from "./Container/App";
 
 ReactDOM.createRoot(
   document.querySelector("#app")

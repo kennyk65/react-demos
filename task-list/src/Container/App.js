@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import NewTask from "../Presentational/NewTask";
 import TasksList from "../Presentational/TasksList";
 
-export default function AppFunction() {
+export default function App() {
   const [newTask, setNewTask] = useState({});
   const handleChange = ({ target }) => {
     const { name, value } = target;
