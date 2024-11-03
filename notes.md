@@ -73,5 +73,39 @@ require (from NodeJS / CommonJS) vs import (from Ecmascript)
 
 React hooks include `useState(), useEffect(), useContext(), useReducer(), useRef()` and others.
 
+`useState()` allows for state management between renders.  Function returns 1) current state of something 2) a callback function you must call when state changes.  React will re-render whenever state changes. You (usually) must make a deep copy of the object received before applying changes because if the object reference is the same React will conclude there were no changes and will not re-render.
 
+`useEffect()` allows you to specify an "effect function" that will be called after each render/re-render.  
+
+```
+useEffect(() => {
+  alert("Something was just rendered");
+});
+```
+
+If you want something to run on the first render only (when the component is first mounted), you pass in an empty array for the second argument.  The second argument is called the _dependency array_:
+
+```
+useEffect(() => {
+  alert("This will display once.");
+}, []);  // Because we passed an empty array.
+```
+
+The dependency array is a list of variables to check for changes.  If any variable has changed since the last effect run, we will run the effect again.  If none have changed, the effect will not run.  An empty array implicitly means nothing has changed, so the effect runs only once.  Our effect always runs the first time.
+
+`useEffect()` is commonly used to setup event mappings, but you must remove old event mappings to prevent multiple mappings being formed.  This is done by returning a function; react will run this before re-rendering.
+
+```
+useEffect(()=>{
+  document.addEventListener('keydown', handleKeyPress);
+  // Specify how to clean up after the effect:
+  return () => {
+    document.removeEventListener('keydown', handleKeyPress);  // Called before re-render.
+  };
+})
+```
+
+**Rules**
+* Hooks should only be called from React functions.
+* Hooks should only be called from the "top level" (not inside ifs, loops, nested functions, etc.).
 
