@@ -109,3 +109,26 @@ useEffect(()=>{
 * Hooks should only be called from React functions.
 * Hooks should only be called from the "top level" (not inside ifs, loops, nested functions, etc.).
 
+## CSS Style Rules ##
+
+* A hyphen is a reserved operator in JavaScript. If we use `background-color`, the hyphen is then interpreted as a minus sign. So use `backgroundColor` instead.
+* In JavaScript, style values are almost always Strings, even if the style value is really numeric.
+* If you don't specify a unit for a numeric value, it is generally assumed to be "px".
+  * This is 30 pixels: `{ fontSize: 30 }`
+  * This is 30 ems: `{ fontSize: "2em" }`
+* _Modularize_ CSS by making separate CSS for each component.  Makes it so we don't have to track down all the places a style is used.  Convention is `fileName.module.css`. Import with `import styles from './fileName.module.css'`.  _Module_ just means separate CSS file for each component.
+* Don't use `class` in FSX because class is a reserve word in JS.  Use `className`.
+
+## Forms ##
+
+e.preventDefault(); -- use this in an onSubmit event handler to stop the form from submitting.
+
+React has controlled and uncontrolled components.  Normal components are uncontrolled in the sense that we don't have to teach them how to hold their own state.  React likes "controlled" where each component is dumb and has to be updated all the time by useState functions and handlers..
+When a <input> tag has a value attribute, it becomes "controlled" forcing you to do all the extra work.
+
+If you want control as the keystrokes are being made, you want "controlled".  If you want to wait until the form is submitted, use "uncontrolled".
+
+For uncontrolled, use `const numberRef = React.useRef();` to make a 'reference', then use it in input like this: `<input type="text" ref={numberRef} />`.  On form submit, for some reason we can't get the value from the form like usual, we have to say ` numberRef.current.value;`. 
+For `<input type='file'`, you have to use uncontrolled.
+
+
