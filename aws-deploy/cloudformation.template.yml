@@ -49,35 +49,33 @@ Resources:
           Action: 
           - "sts:AssumeRoleWithWebIdentity"
           Condition:
-            # StringEquals:
-            #   "sts:ExternalId": !Ref ExternalId
             StringEquals:
+              "sts:ExternalId": !Ref ExternalId
               token.actions.githubusercontent.com:aud: sts.amazonaws.com
-            # StringLike:
-            StringEquals:
-#              token.actions.githubusercontent.com:sub: "repo: kennyk65/react-demos:environment:Production"
               token.actions.githubusercontent.com:sub: "repo:kennyk65/react-demos:ref:refs/heads/main"
 
 
   # Policy to limit permissions
-  # IAMRolePolicy:
-  #   Type: AWS::IAM::Policy
-  #   Properties:
-  #     PolicyName: GitHubActionsS3Policy
-  #     PolicyDocument:
-  #       Version: '2012-10-17'
-  #       Statement:
-  #       - Effect: Allow
-  #         Action:
-  #         - s3:PutObject
-  #         - s3:ListBucket
-  #         Resource: 
-  #         - !Sub arn:aws:s3:::${BucketName}
-  #         - !Sub arn:aws:s3:::${BucketName}/*
-  #     # RoleName: !GetAtt IAMRole.RoleName
+  IAMPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: GitHubActionsS3Policy
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+          - s3:PutObject
+          - s3:ListBucket
+          Resource: 
+          - !Sub arn:aws:s3:::${BucketName}
+          - !Sub arn:aws:s3:::${BucketName}/*
+      Roles:
+      - !Ref IAMRole
 
-#Outputs:
-  # S3BucketName:
-  #   Value: !Ref S3Bucket
-  # IAMRoleName:
-  #   Value: !GetAtt IAMRole.RoleName
+
+# Outputs:
+#   # S3BucketName:
+#   #   Value: !Ref S3Bucket
+#   IAMRoleName:
+#     Value: !GetAtt IAMRole.RoleName
