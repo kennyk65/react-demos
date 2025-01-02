@@ -16,10 +16,10 @@ Parameters:
 
 Resources:
   # S3 Bucket
-  # S3Bucket:
-  #   Type: AWS::S3::Bucket
-  #   Properties:
-  #     BucketName: !Ref BucketName
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref BucketName
 
   MyOIDCProvider:
     Type: AWS::IAM::OIDCProvider
