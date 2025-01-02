@@ -47,7 +47,7 @@ Resources:
             #       StringEquals:
             #         "token.actions.githubusercontent.com": "sts.amazonaws.com"
           Action: 
-          - "sts:AssumeRoleWithWebIdentity"
+          - "sts:AssumeRoleWithWebIdentity" 
           Condition:
             StringEquals:
           #    "sts:ExternalId": !Ref ExternalId
