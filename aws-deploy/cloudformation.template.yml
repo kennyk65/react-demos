@@ -55,9 +55,8 @@ Resources:
               token.actions.githubusercontent.com:aud: sts.amazonaws.com
             # StringLike:
             StringEquals:
-              token.actions.githubusercontent.com:sub: "repo: kennyk65/react-demos:environment:Production"
-#              token.actions.githubusercontent.com:sub: "repo: kennyk65/react-demos:ref:refs/heads/main"
-
+#              token.actions.githubusercontent.com:sub: "repo: kennyk65/react-demos:environment:Production"
+              token.actions.githubusercontent.com:sub: "repo:kennyk65/react-demos:ref:refs/heads/main"
 
 
   # Policy to limit permissions
