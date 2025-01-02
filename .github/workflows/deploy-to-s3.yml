@@ -46,9 +46,9 @@ jobs:
       with:
         aws-region: us-east-1  # Replace with your AWS region
         role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-        # role-external-id: ${{ secrets.ROLE_EXTERNAL_ID }}
+        role-external-id: ${{ secrets.ROLE_EXTERNAL_ID }}
 
     # Step 5: Deploy to S3
     - name: Deploy to S3
       run: |
-        aws s3 sync ./build s3://${{ secrets.S3_UPLOAD_BUCKET }} --delete
+        aws s3 sync /dist s3://${{ secrets.S3_UPLOAD_BUCKET }} --delete
