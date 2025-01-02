@@ -3,7 +3,7 @@ name: Build and Deploy to S3
 # PREREQUISITES:  You must set the following Secrets in your GitHub Repository (settings/secrets and variables):
 # * AWS_ROLE_ARN
 # * ROLE_EXTERNAL_ID - value in the secret must = value in the role's condition.
-# * S3_UPLOAD_BUCKET
+# * S3_BUCKET_NAME
 #
 # Helpful background article:  https://aws.amazon.com/blogs/security/use-iam-roles-to-connect-github-actions-to-actions-in-aws/
 
@@ -51,4 +51,4 @@ jobs:
     # Step 5: Deploy to S3
     - name: Deploy to S3
       run: |
-        aws s3 sync ./dist s3://${{ secrets.S3_UPLOAD_BUCKET }} --delete
+        aws s3 sync ./dist s3://${{ secrets.S3_BUCKET_NAME }} --delete
