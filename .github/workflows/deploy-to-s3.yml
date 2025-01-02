@@ -34,7 +34,7 @@ jobs:
     # Step 3: Install dependencies and build the project
     - name: Install dependencies and build
       run: |
-        cd aws-deploy
+        cd aws-deploy 
         npm ci
         npm run build
 
