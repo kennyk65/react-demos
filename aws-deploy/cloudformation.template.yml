@@ -51,12 +51,10 @@ Resources:
           Condition:
             # StringEquals:
             #   "sts:ExternalId": !Ref ExternalId
-  #          StringEquals: 
-  #            "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
             StringEquals:
               token.actions.githubusercontent.com:aud: sts.amazonaws.com
             StringLike:
-              token.actions.githubusercontent.com:sub: repo:kennyk65/react-demos
+              token.actions.githubusercontent.com:sub: repo:kennyk65/react-demos/*
 
 
   # Policy to limit permissions

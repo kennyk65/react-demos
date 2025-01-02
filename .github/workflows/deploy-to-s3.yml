@@ -4,6 +4,8 @@ name: Build and Deploy to S3
 # * AWS_ROLE_ARN
 # * ROLE_EXTERNAL_ID - value in the secret must = value in the role's condition.
 # * S3_UPLOAD_BUCKET
+#
+# Helpful background article:  https://aws.amazon.com/blogs/security/use-iam-roles-to-connect-github-actions-to-actions-in-aws/
 
 on:
   push:
