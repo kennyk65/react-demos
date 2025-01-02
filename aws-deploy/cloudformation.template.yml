@@ -1,0 +1,83 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Parameters:
+
+  ExternalId:
+    Description:  Random value for ExternalId.  Needs to equal whatever you set in your GitHub repository's secrets as "ROLE_EXTERNAL_ID"   
+    Type:  String
+    Default:  SampleExternalID
+
+  BucketName:
+    Description:  Globally unique S3 bucket name.  Needs to equal whatever you set in your GitHub repository's secrets as "S3_BUCKET_NAME"   
+    Type:  String
+    Default:  kk-react-aws-deploy
+
+
+Resources:
+  # S3 Bucket
+  # S3Bucket:
+  #   Type: AWS::S3::Bucket
+  #   Properties:
+  #     BucketName: !Ref BucketName
+
+  MyOIDCProvider:
+    Type: AWS::IAM::OIDCProvider
+    Properties:
+      Url: "https://token.actions.githubusercontent.com"
+      ThumbprintList:
+      - d89e3bd43d5d909b47a18977aa9d5ce36cee184c  # Complex process to get this from GitHub.
+      ClientIdList:
+      - "sts.amazonaws.com"
+
+
+  # IAM Role
+  IAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: GitHubActionsS3Role
+      Description: Role for GitHub Actions to access S3
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal: 
+            Federated: !Sub arn:aws:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com
+            #   "sts.amazonaws.com": 
+            #     Condition: 
+            #       StringEquals:
+            #         "token.actions.githubusercontent.com": "sts.amazonaws.com"
+          Action: 
+          - "sts:AssumeRoleWithWebIdentity"
+          Condition:
+            # StringEquals:
+            #   "sts:ExternalId": !Ref ExternalId
+  #          StringEquals: 
+  #            "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
+            StringEquals:
+              token.actions.githubusercontent.com:aud: sts.amazonaws.com
+            StringLike:
+              token.actions.githubusercontent.com:sub: repo:kennyk65/react-demos
+
+
+  # Policy to limit permissions
+  # IAMRolePolicy:
+  #   Type: AWS::IAM::Policy
+  #   Properties:
+  #     PolicyName: GitHubActionsS3Policy
+  #     PolicyDocument:
+  #       Version: '2012-10-17'
+  #       Statement:
+  #       - Effect: Allow
+  #         Action:
+  #         - s3:PutObject
+  #         - s3:ListBucket
+  #         Resource: 
+  #         - !Sub arn:aws:s3:::${BucketName}
+  #         - !Sub arn:aws:s3:::${BucketName}/*
+  #     # RoleName: !GetAtt IAMRole.RoleName
+
+#Outputs:
+  # S3BucketName:
+  #   Value: !Ref S3Bucket
+  # IAMRoleName:
+  #   Value: !GetAtt IAMRole.RoleName
