@@ -51,6 +51,6 @@ jobs:
     # Step 5: Deploy to S3
     - name: Deploy to S3
       run: |
-        pwd
-        ls 
+        cd aws-deploy 
+        echo copying files to S3...
         aws s3 sync ./dist s3://${{ secrets.S3_BUCKET_NAME }} --delete
