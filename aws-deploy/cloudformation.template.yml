@@ -50,7 +50,7 @@ Resources:
           - "sts:AssumeRoleWithWebIdentity" 
           Condition:
             StringEquals:
-          #    "sts:ExternalId": !Ref ExternalId
+              "sts:ExternalId": !Ref ExternalId
               token.actions.githubusercontent.com:aud: sts.amazonaws.com
               token.actions.githubusercontent.com:sub: "repo:kennyk65/react-demos:ref:refs/heads/main"
 
