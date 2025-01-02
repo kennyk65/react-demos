@@ -2,10 +2,11 @@ AWSTemplateFormatVersion: '2010-09-09'
 
 Parameters:
 
-  ExternalId:
-    Description:  Random value for ExternalId.  Needs to equal whatever you set in your GitHub repository's secrets as "ROLE_EXTERNAL_ID"   
-    Type:  String
-    Default:  SampleExternalID
+  # TODO: GET EXTERNAL ID TO WORK.
+  # ExternalId:
+  #   Description:  Random value for ExternalId.  Needs to equal whatever you set in your GitHub repository's secrets as "ROLE_EXTERNAL_ID"   
+  #   Type:  String
+  #   Default:  SampleExternalID
 
   BucketName:
     Description:  Globally unique S3 bucket name.  Needs to equal whatever you set in your GitHub repository's secrets as "S3_BUCKET_NAME"   
@@ -46,7 +47,7 @@ Resources:
           - "sts:AssumeRoleWithWebIdentity" 
           Condition:
             StringEquals:
-              "sts:ExternalId": !Ref ExternalId
+            #  "sts:ExternalId": !Ref ExternalId
               token.actions.githubusercontent.com:aud: sts.amazonaws.com
               token.actions.githubusercontent.com:sub: "repo:kennyk65/react-demos:ref:refs/heads/main"
 
