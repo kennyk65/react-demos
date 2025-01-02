@@ -42,10 +42,6 @@ Resources:
         - Effect: Allow
           Principal: 
             Federated: !Sub arn:aws:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com
-            #   "sts.amazonaws.com": 
-            #     Condition: 
-            #       StringEquals:
-            #         "token.actions.githubusercontent.com": "sts.amazonaws.com"
           Action: 
           - "sts:AssumeRoleWithWebIdentity" 
           Condition:
