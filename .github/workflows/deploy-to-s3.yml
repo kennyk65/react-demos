@@ -15,7 +15,7 @@ on:
       - 'aws-deploy/**'
 
 jobs:
-  deploy:
+  buildAndPushToS3:
     runs-on: ubuntu-latest
 
     permissions:
