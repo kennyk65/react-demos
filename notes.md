@@ -3,6 +3,7 @@
 
 * Requires npm to be installed.  Npm gets installed by installing NodeJS.  I believe NodeJS is required simply because we are running JS outside of a browser.
 * run: npx create-react-app name-of-app
+* OR RUN: npm create vite@latest aws-deploy --template react
 * cd into this folder
 * run: npm install
 * run: npm start

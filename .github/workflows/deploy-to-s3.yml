@@ -46,7 +46,7 @@ jobs:
       with:
         aws-region: us-east-1  # Replace with your AWS region
         role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-        role-external-id: ${{ secrets.ROLE_EXTERNAL_ID }}
+        role-external-id: ${{ secrets.ROLE_EXTERNAL_ID }}  # Currently not used.
 
     # Step 5: Deploy to S3
     - name: Deploy to S3
