@@ -62,7 +62,7 @@ Resources:
               token.actions.githubusercontent.com:sub: !Sub "repo:${GitHubRepo}:ref:refs/heads/${GitHubBranch}"
 
 
-  # Policy to limit permissions
+  # Policy to limit permissions 
   IAMPolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:
