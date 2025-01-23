@@ -1,8 +1,8 @@
-# React + Vite
+# Deploy React on AWS
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This project provides a complete example of how to deploy a React based application on AWS.  It consists of three main elements:
 
-Currently, two official plugins are available:
+1.  The React application
+2.  A CloudFormation template to build out the AWS infrastructure (S3 bucket for React build code, API Gateway and Lambda for backend APIs, CloudFront distribution)
+3.  Github actions for building and deploying the React app to S3.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh

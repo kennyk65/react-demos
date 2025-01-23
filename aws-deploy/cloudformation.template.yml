@@ -112,10 +112,11 @@ Resources:
         Comment: "CloudFront Distribution for S3 (static) and API Gateway (dynamic) origins"
         Enabled: true
         PriceClass: PriceClass_100    # Cheapest
+        DefaultRootObject: index.html
         Origins:
           - Id: ApiGatewayOrigin
             DomainName: !Sub "${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com"
-            OriginPath: "/prod"
+            OriginPath: "/Prod"     # SAM apps create a prod stage with a capital "P"
             CustomOriginConfig:
               OriginProtocolPolicy: https-only
           - Id: S3Bucket
@@ -276,7 +277,7 @@ Resources:
         MyApi:
           Type: Api
           Properties:
-            Path: /hello
+            Path: /api/hello
             Method: GET
 
 
