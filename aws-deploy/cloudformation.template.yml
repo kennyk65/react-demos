@@ -1,4 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
 
 Parameters:
 
@@ -13,13 +14,22 @@ Parameters:
     Type:  String
     Default:  kk-react-aws-deploy
 
+  GitHubRepo:
+    Description: GitHub repo name, e.g. kennyk65/react-demos.  Repo is expected to have GitHub Action for pushing code to S3 Bucket.
+    Type: String
+    Default: kennyk65/react-demos
+    
+  GitHubBranch: 
+    Description: GitHub branch name, e.g. main
+    Type: String
+    Default: main
+
+  GitHubActionRoleName:
+    Description: The name of the IAM role to be assumed by the GitHub Action.  The value used here should match GitHub.  
+    Type: String
+    Default: GitHubActionsS3Role
 
 Resources:
-  # S3 Bucket
-  S3Bucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketName: !Ref BucketName
 
   MyOIDCProvider:
     Type: AWS::IAM::OIDCProvider
@@ -31,11 +41,11 @@ Resources:
       - "sts.amazonaws.com"
 
 
-  # IAM Role
+  # IAM Role.  The ARN of this role will be used by the GitHub action, so it must be consistent.
   IAMRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: GitHubActionsS3Role
+      RoleName: !Ref GitHubActionRoleName
       Description: Role for GitHub Actions to access S3
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -47,9 +57,9 @@ Resources:
           - "sts:AssumeRoleWithWebIdentity" 
           Condition:
             StringEquals:
-            #  "sts:ExternalId": !Ref ExternalId
+            #  "sts:ExternalId": !Ref ExternalId    # TODO: IMPLEMENT TIGHTER SECURITY WITH EXTERNAL ID.
               token.actions.githubusercontent.com:aud: sts.amazonaws.com
-              token.actions.githubusercontent.com:sub: "repo:kennyk65/react-demos:ref:refs/heads/main"
+              token.actions.githubusercontent.com:sub: !Sub "repo:${GitHubRepo}:ref:refs/heads/${GitHubBranch}"
 
 
   # Policy to limit permissions
@@ -71,8 +81,221 @@ Resources:
       - !Ref IAMRole
 
 
-# Outputs:
-#   # S3BucketName:
-#   #   Value: !Ref S3Bucket
-#   IAMRoleName:
-#     Value: !GetAtt IAMRole.RoleName
+  # S3 Bucket
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref BucketName
+
+  # Contents of the bucket are only publicly gettable through the CloudFront distribution:
+  BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties: 
+      Bucket: !Ref S3Bucket
+      PolicyDocument: 
+        Statement: 
+        - Effect: Allow                                  #  Allow...
+          Principal:
+            Service: cloudfront.amazonaws.com            # ...a CloudFront distribution...
+          Action:                                        # ...to perform GetObject on...
+          - s3:GetObject
+          Resource: !Sub arn:aws:s3:::${S3Bucket}/*      #  ...any object in this S3 bucket.
+          Condition:
+            StringEquals:
+              AWS:SourceArn: !Sub arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFront}   # This policy is based on Origin Access Control
+
+  # CloudFront 
+  CloudFront:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Comment: "CloudFront Distribution for S3 (static) and API Gateway (dynamic) origins"
+        Enabled: true
+        PriceClass: PriceClass_100    # Cheapest
+        Origins:
+          - Id: ApiGatewayOrigin
+            DomainName: !Sub "${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com"
+            OriginPath: "/prod"
+            CustomOriginConfig:
+              OriginProtocolPolicy: https-only
+          - Id: S3Bucket
+            DomainName: !GetAtt S3Bucket.RegionalDomainName   # Must be region specific to avoid redirect behavior when buckets are new
+            OriginAccessControlId: !Ref OAC
+            S3OriginConfig:
+              OriginAccessIdentity: ''   # This is required, but unneeded when using OAC.  Must supply an empty string.
+
+        DefaultCacheBehavior:
+          TargetOriginId: S3Bucket # Default to S3
+          ViewerProtocolPolicy: redirect-to-https
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6 # Managed-CachingOptimized, recommended for S3
+
+        CacheBehaviors: # Use Cache Behaviors for path-based routing
+          - PathPattern: /api/* # Matches paths starting with /api
+            TargetOriginId: ApiGatewayOrigin
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods: [ "GET", "HEAD", "OPTIONS"]
+            CachedMethods: [ "GET", "HEAD", "OPTIONS"]
+            CachePolicyId:  4135ea2d-6df8-44a3-9df3-4b5a84be39ad   # "CachingDisabled" on the console.
+            OriginRequestPolicyId:  b689b0a8-53d0-40ab-baf2-68738e2966ac  # "AllViewerExceptHostHeader" on the console.
+
+  # Origin Access Control implements public access to S3 bucket only through CloudFront: 
+  OAC:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties: 
+      OriginAccessControlConfig: 
+          Description: An optional description for the origin access control
+          Name: MainOAC
+          OriginAccessControlOriginType: s3
+          SigningBehavior: always
+          SigningProtocol: sigv4
+          
+ 
+  # S3 Custom resource to clean out the bucket when deleting the stack
+  CustomResourceLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub CustomResource-${AWS::StackName}
+      Handler: index.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Runtime: python3.11
+      Timeout: 15
+      Code:
+        ZipFile: |
+          import boto3, json
+          import cfnresponse
+          
+          def handler(event, context):
+            requestType = event["RequestType"]
+            s3Bucket   = event['ResourceProperties']['s3Bucket']
+
+            responseData = {}
+            msg = ""
+            try:
+              if requestType == 'Delete':
+                print ('Cleaning out S3 buckets to enable delete... ' )
+                boto3.resource('s3').Bucket(s3Bucket).objects.all().delete()
+                msg = "Bucket cleanup complete"
+
+            except Exception as e:
+              msg = f"Exception raised for function: Exception details: {e}"
+              print(msg)
+              responseData['Reason'] = msg
+              cfnresponse.send(event, context, cfnresponse.FAILED, responseData, event["LogicalResourceId"]);
+              
+            # Unless something blew up, we should wander into this code:
+            print(msg)
+            responseData['Reason'] = msg
+            cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData, event["LogicalResourceId"]);
+              
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${AWS::StackName}-LambdaRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: /
+      Policies:
+      - PolicyName: !Sub lambdaLogsCreatePolicy-${AWS::StackName}
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+          - Effect: Allow
+            Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            Resource: 
+            - '*'
+                
+  # Custom bucket maintenance function.
+  invokeLambda:
+    Type: Custom::BucketMaintenance
+    Version: "1.0"
+    Properties:
+      ServiceToken: !GetAtt CustomResourceLambda.Arn
+      s3Bucket: !Ref S3Bucket
+
+  # This is a simple "hello world" style Lambda function.
+  MyLambda:
+    Type: AWS::Serverless::Function
+    Properties: 
+      FunctionName: !Sub ${AWS::StackName}-HelloWorldLambda
+      Description: Example Lambda from CloudFormation
+      MemorySize: 128
+      Timeout: 4
+      # SAM will use this policy to create a role to attach to the function:
+      Policies:  
+      - Version: 2012-10-17 
+        Statement:
+          - Effect: Allow
+            Action: 
+              - logs:CreateLogGroup
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+              - s3:putObject
+            Resource: "*"
+      Handler: index.entrypoint
+      Runtime: nodejs20.x
+      InlineCode: |
+        'use strict';
+
+        console.log('Loading function');
+
+        //  Entry point of Lambda functionn:
+        exports.entrypoint = (event, context, callback) => {
+          console.log('Received event:', JSON.stringify(event, null, 2));
+          
+          // Send response back.  Null means the function was successful. Second parameter tells the API Gateway what to return.
+          // Since CORS is almost always needed with API Gateway, and since API Gateway will often call the Lambda via Proxy integration,
+          // Set the common CORS headers.
+          callback(
+            null, 
+            {
+              "statusCode": 200,
+              "headers": {
+                "Access-Control-Allow-Headers": '*',
+                "Access-Control-Allow-Origin": '*',
+                "Access-Control-Allow-Methods": 'GET,OPTIONS'		    
+              },
+              "body": "Hello World!"
+            }
+          );   
+        };   
+      # Events section defines what triggers the Lambda
+      Events:
+        # This will define an API Gateway resource that will call our function on a GET to /hello.
+        # The SAM stuff will transform this into all of the required API gateway components.
+        # Good thing too because they are almost impossible to define using regular cloud formation.
+        MyApi:
+          Type: Api
+          Properties:
+            Path: /hello
+            Method: GET
+
+
+Outputs:
+  TheURL:
+    Description:  WARNING - There may be a delay until this URL is available
+    Value: !Sub https://${CloudFront.DomainName}
+
+  S3DomainName:
+    Value:  !GetAtt S3Bucket.DomainName  
+
+  # They don't give you the URL, you have to EARN it.
+  # This output depends on the names of the SAM-generated resources.  
+  # If they change the generated resource names, this code won't work:
+  RestAPIProdStageURL:
+    Value: !Sub https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/${ServerlessRestApiProdStage}/hello
+    Description: URL of the Prod Stage of the generated REST API.  This is the thing you call.
+
+  ApiGatewayInManagementConsole:
+    Value: !Sub https://${AWS::Region}.console.aws.amazon.com/apigateway/home?region=${AWS::Region}#/apis/${ServerlessRestApi}/resources/${ServerlessRestApiProdStage} 
+    Description: Handy link to the Management Console location where this API can be seen.
+    
