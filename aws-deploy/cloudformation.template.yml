@@ -163,7 +163,71 @@ Resources:
           SigningBehavior: always
           SigningProtocol: sigv4
           
- 
+  # This is a simple "hello world" style Lambda function.
+  MyLambda:
+    Type: AWS::Serverless::Function
+    Properties: 
+      FunctionName: !Sub ${AWS::StackName}-HelloWorldLambda
+      Description: Example Lambda from CloudFormation
+      MemorySize: 128
+      Timeout: 4
+      # SAM will use this policy to create a role to attach to the function:
+      Policies:  
+      - Version: 2012-10-17 
+        Statement:
+          - Effect: Allow
+            Action: 
+              - logs:CreateLogGroup
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+              - s3:putObject
+            Resource: "*"
+      Handler: index.entrypoint
+      Runtime: nodejs20.x
+      InlineCode: |
+        'use strict';
+
+        console.log('Loading function');
+
+        //  Entry point of Lambda functionn:
+        exports.entrypoint = (event, context, callback) => {
+          console.log('Received event:', JSON.stringify(event, null, 2));
+          
+          // Send response back.  Null means the function was successful. Second parameter tells the API Gateway what to return.
+          // Since CORS is almost always needed with API Gateway, and since API Gateway will often call the Lambda via Proxy integration,
+          // Set the common CORS headers.
+          callback(
+            null, 
+            {
+              "statusCode": 200,
+              "headers": {
+                "Access-Control-Allow-Headers": '*',
+                "Access-Control-Allow-Origin": '*',
+                "Access-Control-Allow-Methods": 'GET,OPTIONS'		    
+              },
+              "body": "Hello World!"
+            }
+          );   
+        };   
+      # Events section defines what triggers the Lambda
+      Events:
+        # This will define an API Gateway resource that will call our function on a GET to /hello.
+        # The SAM stuff will transform this into all of the required API gateway components.
+        # Good thing too because they are almost impossible to define using regular cloud formation.
+        MyApi:
+          Type: Api
+          Properties:
+            Path: /api/hello
+            Method: GET
+
+  # Custom resource for cleaning up the bucket before delete.
+  CustomResourceLambda:
+    Type: Custom::BucketMaintenance
+    Version: "1.0"
+    Properties:
+      ServiceToken: !GetAtt CustomResourceLambda.Arn
+      s3Bucket: !Ref S3Bucket
+
   # S3 Custom resource to clean out the bucket when deleting the stack
   CustomResourceLambda:
     Type: AWS::Lambda::Function
@@ -225,74 +289,10 @@ Resources:
             - logs:CreateLogGroup
             - logs:CreateLogStream
             - logs:PutLogEvents
+            - s3:DeleteObject
+            - s3:ListBucket
             Resource: 
             - '*'
-                
-  # Custom bucket maintenance function.
-  invokeLambda:
-    Type: Custom::BucketMaintenance
-    Version: "1.0"
-    Properties:
-      ServiceToken: !GetAtt CustomResourceLambda.Arn
-      s3Bucket: !Ref S3Bucket
-
-  # This is a simple "hello world" style Lambda function.
-  MyLambda:
-    Type: AWS::Serverless::Function
-    Properties: 
-      FunctionName: !Sub ${AWS::StackName}-HelloWorldLambda
-      Description: Example Lambda from CloudFormation
-      MemorySize: 128
-      Timeout: 4
-      # SAM will use this policy to create a role to attach to the function:
-      Policies:  
-      - Version: 2012-10-17 
-        Statement:
-          - Effect: Allow
-            Action: 
-              - logs:CreateLogGroup
-              - logs:CreateLogStream
-              - logs:PutLogEvents
-              - s3:putObject
-            Resource: "*"
-      Handler: index.entrypoint
-      Runtime: nodejs20.x
-      InlineCode: |
-        'use strict';
-
-        console.log('Loading function');
-
-        //  Entry point of Lambda functionn:
-        exports.entrypoint = (event, context, callback) => {
-          console.log('Received event:', JSON.stringify(event, null, 2));
-          
-          // Send response back.  Null means the function was successful. Second parameter tells the API Gateway what to return.
-          // Since CORS is almost always needed with API Gateway, and since API Gateway will often call the Lambda via Proxy integration,
-          // Set the common CORS headers.
-          callback(
-            null, 
-            {
-              "statusCode": 200,
-              "headers": {
-                "Access-Control-Allow-Headers": '*',
-                "Access-Control-Allow-Origin": '*',
-                "Access-Control-Allow-Methods": 'GET,OPTIONS'		    
-              },
-              "body": "Hello World!"
-            }
-          );   
-        };   
-      # Events section defines what triggers the Lambda
-      Events:
-        # This will define an API Gateway resource that will call our function on a GET to /hello.
-        # The SAM stuff will transform this into all of the required API gateway components.
-        # Good thing too because they are almost impossible to define using regular cloud formation.
-        MyApi:
-          Type: Api
-          Properties:
-            Path: /api/hello
-            Method: GET
-
 
 Conditions:
   UseManagedCachingOptimized: !Equals [!Ref EnableCache, "true"] # Needed to help us switch caching policies.
@@ -305,7 +305,6 @@ Mappings:
       Key: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
     ManagedCachingOptimized: 
       Key: 658327ea-f89d-4fab-a63d-7e88639e58f6
-
 
 
 Outputs:
