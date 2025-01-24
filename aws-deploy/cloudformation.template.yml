@@ -14,6 +14,14 @@ Parameters:
     Type:  String
     Default:  kk-react-aws-deploy
 
+  EnableCache:
+    Description:  Allows you to enable CloudFront-level caching for production (true) or disable for development (false)
+    Type: String
+    AllowedValues:
+    - true
+    - false
+    Default: false
+
   GitHubRepo:
     Description: GitHub repo name, e.g. kennyk65/react-demos.  Repo is expected to have GitHub Action for pushing code to S3 Bucket.
     Type: String
@@ -129,7 +137,11 @@ Resources:
         DefaultCacheBehavior:
           TargetOriginId: S3Bucket # Default to S3
           ViewerProtocolPolicy: redirect-to-https
-          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6 # Managed-CachingOptimized, recommended for S3
+          # Disable the cache or not depending on the EnableCache parameter:
+          CachePolicyId: !If
+            - UseManagedCachingOptimized
+            - !FindInMap [CachePolicies, ManagedCachingOptimized, Key]
+            - !FindInMap [CachePolicies, CachingDisabled, Key]
 
         CacheBehaviors: # Use Cache Behaviors for path-based routing
           - PathPattern: /api/* # Matches paths starting with /api
@@ -280,6 +292,20 @@ Resources:
           Properties:
             Path: /api/hello
             Method: GET
+
+
+Conditions:
+  UseManagedCachingOptimized: !Equals [!Ref EnableCache, "true"] # Needed to help us switch caching policies.
+
+Mappings: 
+
+  # Needed to help us switch caching policies.
+  CachePolicies: 
+    CachingDisabled: 
+      Key: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+    ManagedCachingOptimized: 
+      Key: 658327ea-f89d-4fab-a63d-7e88639e58f6
+
 
 
 Outputs:
